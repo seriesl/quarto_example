@@ -23,6 +23,7 @@ The present work is the result of a team work involving
 - Charles Mingus
 - Lester Young 
 - Oscar Peterson
+- Pierre Straebler
 
 ::::{.text-center}
 ![](./figures/logo_HPC@Maths.jpg){width=30%}
