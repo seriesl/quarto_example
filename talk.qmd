@@ -28,3 +28,14 @@ The present work is the result of a team work involving
 ::::{.text-center}
 ![](./figures/logo_HPC@Maths.jpg){width=30%}
 ::::
+
+
+
+---
+
+```{python}
+#| echo: true
+import numpy as np
+r = np.arange(0, 2)
+print(r)
+```
