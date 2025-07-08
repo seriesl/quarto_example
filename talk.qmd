@@ -891,4 +891,134 @@ def compute_err(eps):
 
 compute_err(eps='1e-3')
 ```
+---
+
+# Adaptive mesh refinement software
+
+## Mesh adaptation
+
+::: {.row}
+
+:::: {.col-6}
+![](figures/patch_based.png)
+::::
+
+:::: {.col}
+![](figures/cell_based.png)
+::::
+:::
+
+:::{.notes}
+If we look at all the open source software specializing in dynamic mesh adaptation, there are two main families:
+- patch-based, which is a hierarchical representation of the mesh: layers are placed on top of layers
+- cell-based, which is a flat representation of the mesh
+
+Each has its advantages and disadvantages:
+- patch-based has rectangular zones for tiling and optimizing caches. But it generally requires more cells than necessary.
+- cell-based requires far fewer cells but requires a tree-like structure, which means that you lose the good memory locality you had with patch-based. We use space filling curves such as Morton or Hilbert to find an acceptable locality.
+:::
+
+---
+
+![](figures/amr-charac.png)
+
+:::{.notes}
+If we look in a little more detail at the functions offered by these software packages, we can group them into 4 main families.
+
+There are two types of data structure, as described above: a list of blocks or a tree.
+
+There are two main adaptation criteria: one is based on a heuristic criterion and depends on the physical problem you are looking at. This could be a gradient, for example. The other is based on a wavelet decomposition that allows you to adapt the mesh without knowing anything about the physical problem, as we have just shown with Haar wavelets and multiresolution.
+
+As you advance in time, you can choose different time steps depending on the resolution of the grid: this is called subcycling. Otherwise, you take the same time step everywhere and, in general, it is the finest grid that guides its value to satisfy a CFL.
+
+Finally, given that the mesh is dynamic, the load balancing must be reviewed regularly during the calculation so that, in a parallel context, all the processes have more or less the same workload. There are two types of method: one based on the space filling curve, where you cut out chunks of the same size following this curve; the other is based on solving a diffusion equation on the workload of the processes.
+:::
+
+
+---
+
+<div style="position: absolute; top: 50%; transform: translate(0, -50%); text-align: center;">
+
+:::{.row}
+::::{.col-6 .align-self-center}
+![](figures/logo.png)
+::::
+::::{.col .align-self-center}
+<h4>samurai</h4>
+::::
+:::
+</div>
+
+---
+
+## Roadmap
+
+:::{.text-center}
+![](figures/roadmap.png)
+:::
+
+:::{.row .text-center .align-items-center}
+::::{.col}
+![](figures/numpex_logo.png){height="110px"}
+::::
+::::{.col}
+![](figures/quantstack.png){height="50px"}
+::::
+::::{.col}
+![](figures/cea.png){height="80px"}
+::::
+::::{.col}
+![](figures/logo_nasa.jpg){height="95px"}
+::::
+:::
+
+
+:::{.notes}
+Here's the samurai roadmap for the coming months and probably years.
+
+We now have the possibility of changing the containers in which our fields are stored. We did this so that we could start using Kokkos. So we'd be very interested in working with the people at Cexa on this.
+
+We have received several funding packages that have enabled us to hire two research engineers.
+
+As part of numpex, we also have an engineer position to work on the I/O part of AMR methods in collaboration with Dyablo developers.
+:::
+
+---
+
+:::::{.center-page}
+:::{.row .align-items-center}
+::::{.col-4}
+<video data-autoplay loop="true" src="videos/ink.mp4" />
+::::
+::::{.col}
+![](figures/human.png)
+::::
+::::{.col-5}
+![](figures/lbm_test_case.png)
+::::
+:::
+
+:::{.row .align-items-center}
+::::{.col-4}
+<video data-autoplay loop="true" src="videos/bubble.mp4" />::::
+::::{.col}
+![](figures/plasma.png)
+::::
+:::
+:::::
+
+## Scientific Collaborations
+
+
+
+- Lattice Boltzmann methods and multiresolution - **Thomas Bellotti** (*EM2C/CNRS/CS*) and **Benjamin Graille** (*LMO/Université Paris-Saclay*)
+- Plasma discharges and electric propulsion - **Alejandro Alvarez-Laguna** (*LPP/École polytechnique*) and **Louis Reboul** (*ONERA*)
+- DNS of lithium-ion batteries based on high-resolution 3D images of porous electrode microstructures - **Ali Asad** (*TotalEnergies*) and **Laurent François** (*ONERA*)
+- Sharp interface method for low Mach two-phase flows - **Nicolas Grenier** (*LISN/Université Paris-Saclay*) and **Christian Tenaud** (*EM2C/CNRS/CS*)
+- Low-Mach reactive flows - **Christian Tenaud** (*EM2C/CNRS/CS*)
+- Interfacial flow simulation - **Giuseppe Orlando** and **Ward Haegeman** (*CMAP/Ecole polytechnique*), **Samuel Kokh** (*CEA/MdlS*), **Joël Dupays** and **Clément Le Touze** (*ONERA*), **Marica Pelanti** (*ENSTA/IP Paris*), **Khaled Saleh** (*Aix-Marseille Université*), **Jean-Marc Hérard** (*EDF*)
+- Mathematical modeling and simulation of non-equilibrium plasmas for the prediction of electric propulsion - **Teddy Pichard** and **Zoubaïr Tazakkati** (*CMAP/École polytechnique*)
+- Simulation analysis on the Hydrogen risk - **Luc Lecointre**, **Pierre-Alexandre Masset**, **Etienne Studer** (*CEA*), **Sergey Koudriakov** (*CEA*) and **Christian Tenaud** (*EM2C/CNRS/CS*)
+- Five projects NASA 2025 Modelling Summer Visit (Ame Research Center)
+
 
