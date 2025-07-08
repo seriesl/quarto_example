@@ -1,8 +1,7 @@
 ---
-title:  Quarto presentation
+title:  Numerical analysis of mesh adaptation methods and its impact on the simulation of PDEs
 author:
-    - First name 
-    - Last name
+    - Marc Massot
 format:
   revealjs:
     css: css/light.css
@@ -10,6 +9,8 @@ format:
     # slide-number: true
 highlight-style: github
 footer: Quarto presentation &nbsp;&nbsp; <img width="5%" src="figures/by-sa.png"/> &nbsp;&nbsp; 10 July 2025
+
+
 ---
 
 ```{=html}
@@ -17,32 +18,709 @@ footer: Quarto presentation &nbsp;&nbsp; <img width="5%" src="figures/by-sa.png"
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 ```
 
+::::{.center-page-vertically}
+::: {.row}
+
+:::: {.col-8}
+
 The present work is the result of a team work involving
 
-- Thelonious Monk
-- Charles Mingus
-- Lester Young 
-- Oscar Peterson
-- Pierre Straebler
+- Thomas Bellotti (CR CNRS  - EM2C - Fédé Maths CS)
+- Loïc Gouarin (IR École polytechnique, CMAP)
+- Josselin Massot (IR École polytechnique, CMAP)
+- Pierre Matalon (IR École polytechnique, CMAP)
+- Laurent Séries (IR École polytechnique, CMAP)
+- Christian Tenaud (DR CNRS  - EM2C - Fédé Maths CS)
 
-::::{.text-center}
-![](./figures/logo_HPC@Maths.jpg){width=30%}
+
+:::{.text-center .mb-4}
+[site web de l'équipe](https://initiative-hpc-maths.gitlab.labos.polytechnique.fr/site/)
+
+[https://github.com/hpc-maths/](https://github.com/hpc-maths/)
+:::
+![](figures/logo_HPC@Maths.jpg){width=30%}
 ::::
+
+:::: {.col .text-center .align-self-center}
+:::{.my-4}
+![](figures/logo_polytechnique.png){width=70%}
+:::
+::::
+
+:::
+::::
+
+
+# Context
+
+---
+
+##  Burgers equation - small hat problem
+
+$$
+\partial_t u + \partial_x \left ( f(u) \right ) = 0, \quad t \geq 0, \quad x \in \mathbb{R}, \qquad f(u) = \dfrac{u^2}{2},
+$$
+
+
+::: {.row .mb-4}
+
+:::: {.col-7 .mt-4}
+
+Consider the Cauchy problem with initial cond.
+
+$$
+u^0(x)=\left\{%
+             \begin{array}{cc}
+             \hfill 0,    & x \in ]- \infty,-1]\cup [1, + \infty[,\\
+                    x+1,  & x \in ]-1,0],        \hfill           \\
+                    1-x,  & x \in[0,1[.          \hfill           \\
+             \end{array}
+       \right.
+$$
+
+
+::: {.incremental}
+- Shock formation at time $T^* = 1$
+- Leading to irreversible solution
+- RH condition governs shock dynamics
+:::
+
+::::
+
+:::: {.col}
+![](figures/chapeau.jpg)
+::::
+:::
+
+---
+
+##  Burgers equation - small hat problem
+
+$$
+\partial_t u + \partial_x \left ( f(u) \right ) = 0, \quad t \geq 0, \quad x \in \mathbb{R}, \qquad f(u) = \dfrac{u^2}{2},
+$$
+
+
+::: {.row .mb-4}
+
+:::: {.col-7 .mt-4}
+Consider the Cauchy problem with initial cond.
+
+$$
+u^0(x)=\left\{%
+             \begin{array}{cc}
+             \hfill 0,    & x \in ]- \infty,-1]\cup [1, + \infty[,\\
+                    x+1,  & x \in ]-1,0],        \hfill           \\
+                    1-x,  & x \in[0,1[.          \hfill           \\
+             \end{array}
+       \right.
+$$
+
+- Shock formation at time $T^* = 1$
+- Leading to irreversible solution
+- RH condition governs shock dynamics
+
+::::
+
+:::: {.col}
+![](figures/chapeau_bis.jpg)
+::::
+:::
+
+---
+
+##  Burgers equation - small hat problem
+
+$$
+\partial_t u + \partial_x \left ( f(u) \right ) = 0, \quad t \geq 0, \quad x \in \mathbb{R}, \qquad f(u) = \dfrac{u^2}{2},
+$$
+
+
+::: {.row .mb-4}
+
+:::: {.col-7 .mt-4}
+Consider the Cauchy problem with initial cond.
+
+$$
+u^0(x)=\left\{%
+             \begin{array}{cc}
+             \hfill 0,    & x \in ]- \infty,-1]\cup [1, + \infty[,\\
+                    x+1,  & x \in ]-1,0],        \hfill           \\
+                    1-x,  & x \in[0,1[.          \hfill           \\
+             \end{array}
+       \right.
+$$
+
+::: {.incremental}
+
+- Shock location $\varphi(t)=\sqrt{2(1+t)}-1$
+- Propagation speed shock $\sigma(t)={1}/{\sqrt{2(1+t)}}$
+- Shock amplitude $[u]=\sqrt{{2}/{(1+t)}}$
+
+:::
+
+::::
+
+:::: {.col}
+![](figures/chapeau_bis.jpg)
+::::
+:::
+
+
+:::{.notes}
+The key issue is to get a analytical solution of the problem involving both reversible and irreversible dynamics. Notebook MAP412 pour intégration Godunov et convergence https://jupyter_map412.gitlab.labos.polytechnique.fr/jb_2024_2025/content/chapter/11_edp_03/burgers.html
+:::
+
+
+---
+
+##  Adaptive Multiresolution
+
+::: {.row}
+
+:::: {.col-7}
+
+- Minimum level $\underline{\ell}$ and maximum level $\bar{\ell}$.
+- Cells:
+$$
+C_{\ell, k}:=\prod_{\alpha=1}^d\left[2^{-\ell} k_\alpha, 2^{-\ell}\left(k_\alpha+1\right)\right]
+$$
+- Finest step: $\Delta x=2^{-\bar{\ell}}$.
+- Level-wise step: $\Delta x_{\ell}:=2^{-\ell}=2^{\Delta \ell} \Delta x$.
+::::
+
+:::: {.col}
+![](figures/levels_mod.png)
+::::
+:::
+
+
+:::{.notes}
+Just introducing the notations and the notion of level difference with Delta l
+:::
+
+---
+
+## Wavelets
+
+Decomposition of the solution on a wavelet basis [Daubechies, '88], [Mallat, '89] to measure its local regularity.
+"Practical" approach by [Harten, '95], [Cohen et al., '03].
+
+::: {.row .mt-4}
+
+:::: {.col-6}
+
+**Projection operator**
+
+**Prediction operator** at order $2 \gamma+1$
+
+$$
+{\hat f}_{\ell+1,2 k}={f}_{\ell, k}+\sum_{\sigma=1}^\gamma \psi_\sigma\left({f}_{\ell, k+\sigma}-{f}_{\ell, k-\sigma}\right)
+$$
+
+::::: {style="text-align: left"}
+![](figures/prediction.jpg)
+:::::
+::::
+:::: {.col-6 .fragment}
+
+Details are **regularity indicator**
+$$
+{\mathrm{d}}_{\ell, {k}}:={f}_{\ell, {k}}-{\hat{f}}_{\ell, {k}}
+$$
+
+
+Let $f \in W^{\nu, \infty}$ (neigh. of $C_{\ell, k}$ ), then
+$$
+\left|{\mathrm{d}}_{\ell, k}\right| \lesssim 2^{-\ell \min (\nu, 2 \gamma+1)}|f|_{W^{\min (\nu, 2 \gamma+1), \infty}}
+$$
+
+::::
+:::
+::: {.text-center .mt-4 .fragment}
+
+**Fast wavelet transform:**
+
+means at the finest level can be recast as means at the coarsest level + details
+$$
+\begin{array}{rlr}
+{f}_{\overline{\ell}}
+& \Longleftrightarrow & \left({f}_{\underline{\ell}}, {{d}}_{\underline{\ell} +1}, \ldots, {d}_{\bar{\ell}}\right)\\
+\end{array}
+$$
+
+:::
+
+---
+
+## Mesh coarsening (static)
+
+Local regularity of the solution allows to select areas to coarsen
+
+$$
+{{f}}_{\bar{\ell}} \rightarrow \left({f}_{\underline{\ell}}, {\mathbf{d}}_{\underline{\ell}+1}, \ldots, {\mathbf{d}}_{\bar{\ell}}\right)  \rightarrow \left({f}_{\underline{\ell}}, {\tilde{\mathbf{d}}}_{\underline{\ell}+1}, \ldots, \tilde{{\mathbf{d}}}_{\bar{\ell}}\right) \rightarrow  {\tilde{{f}}}_{\bar{\ell}}
+$$
+$$
+ \tilde{{\mathrm{d}}}_{\ell, k}=
+ \begin{cases}0, & \text { if } \left|{\mathbf{d}}_{\ell, k}\right| \leq \epsilon_{\ell}=2^{-d \Delta \ell} \epsilon, \quad \rightarrow \quad\left\|{\mathbf{f}}_{\bar{\ell}}-\tilde{{\mathbf{f}}}_{\bar{\ell}}\right\|_{\ell^p} \lesssim \epsilon \\
+{\mathrm{d}}_{\ell, k}, & \text { otherwise}
+\end{cases}
+$$
+
+Set a small (below $\epsilon_{\ell}$) detail to zero $\equiv$  erase the cell $C_{\ell, k}$ from the structure
+
+---
+
+## Examples
+
+::::{.row}
+
+:::::{.col}
+:::{.callout-tip title="Equation" icon=false}
+$$
+f(x) = exp(-50x^2) \; \text{for} \; x\in[-1, 1]
+$$
+:::
+::::
+
+:::::{.col}
+
+<table>
+    <tr>
+        <td>min level</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>max level</td>
+        <td>12</td>
+    </tr>
+    <tr>
+        <td>&#949;</td>
+        <td>10<sup>-3</sup></td>
+    </tr>
+    <tr>
+        <td>compression rate</td>
+        <td>96.29%</td>
+    </tr>
+    <tr>
+        <td>error</td>
+        <td>0.00078</td>
+    </tr>
+</table>
+::::
+
+:::::
+
+![](figures/compression_exp.png){fig-align=center}
+
+## Examples
+
+::::{.row}
+
+:::::{.col}
+:::{.callout-tip title="Equation" icon=false}
+$$
+f(x) = \left\{
+    \begin{array}{l}
+    1 - |2x| \; \text{if} \; -0.5 < x < 0.5,\\
+    0 \; \text{elsewhere}
+    \end{array}
+    \right.
+$$
+:::
+::::
+
+:::::{.col}
+
+<table>
+    <tr>
+        <td>min level</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>max level</td>
+        <td>12</td>
+    </tr>
+    <tr>
+        <td>&#949;</td>
+        <td>10<sup>-3</sup></td>
+    </tr>
+    <tr>
+        <td>compression rate</td>
+        <td>98.49%</td>
+    </tr>
+    <tr>
+        <td>error</td>
+        <td>0</td>
+    </tr>
+</table>
+::::
+
+:::::
+
+![](figures/compression_abs.png){fig-align=center}
+
+## Examples
+
+::::{.row}
+
+:::::{.col}
+:::{.callout-tip title="Equation" icon=false}
+$$
+f(x) = 1 - \sqrt{\left| sin \left( \frac{\pi}{2} x \right) \right|} \; \text{for} \; x\in[-1, 1]
+$$
+:::
+::::
+
+:::::{.col}
+
+<table>
+    <tr>
+        <td>min level</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>max level</td>
+        <td>12</td>
+    </tr>
+    <tr>
+        <td>&#949;</td>
+        <td>10<sup>-3</sup></td>
+    </tr>
+    <tr>
+        <td>compression rate</td>
+        <td>96.29%</td>
+    </tr>
+    <tr>
+        <td>error</td>
+        <td>0.00053</td>
+    </tr>
+</table>
+::::
+
+:::::
+
+![](figures/compression_sqrt.png){fig-align=center}
+
+## Examples
+
+::::{.row}
+
+:::::{.col}
+:::{.callout-tip title="Equation" icon=false}
+$$
+f(x) = \tanh(50 |x|) - 1 \; \text{for} \; x\in[-1, 1]
+$$
+:::
+::::
+
+:::::{.col}
+
+<table>
+    <tr>
+        <td>min level</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>max level</td>
+        <td>12</td>
+    </tr>
+    <tr>
+        <td>&#949;</td>
+        <td>10<sup>-3</sup></td>
+    </tr>
+    <tr>
+        <td>compression rate</td>
+        <td>97.46%</td>
+    </tr>
+    <tr>
+        <td>error</td>
+        <td>0.002</td>
+    </tr>
+</table>
+::::
+
+:::::
+
+![](figures/compression_tanh.png){fig-align=center}
+
+---
+
+## Time evolution of PDEs
+
+- Finite volumes with global time step $\Delta t = \Lambda(\Delta x)$
+- Use dynamic mesh refinement
+
+
+Mesh updated using “old” information at time $t$ to accommodate the one at time
+$t + \Delta t$
+
+
+- Propagation of information :  add security cells
+- Formation of singularities : (regularity index: $\nu =0$, $\mu = \min(\nu,2\gamma +1)$) refine if
+$$
+\left|{\mathbf{d}}_{\ell, k}\right| \geq \epsilon_{\ell}\,2^{d+\mu}
+$$
+
+::: {.text-center}
+![](figures/viscous_burgers.jpg){width=50%}
+:::
+
+
+---
+
+## Finite volumes / conservation / order
+
+
+
+:::{.mb-3}
+Flux evaluation at interfaces between levels
+:::
+![](figures/reconstruction_only_leaves.jpg)
+
+
+
+:::: {.fragment}
+
+:::{.my-3}
+Using the prediction operator allows to evaluate fluxes at the same level
+:::
+
+![](figures/reconstruction.jpg)
+
+::::
+
+:::{.callout-note .mt-3 icon=false title="Finite volume method"}
+We use a Godunov flux for the small hat problem
+:::
 
 
 
 ---
 
-```{python}
-#| echo: true
-import numpy as np
-import plotly.graph_objects as go
+:::{.text-center}
+<div>
+<video data-autoplay width="80%" src="videos/burgers/MRA_upwind_without_portion-min_1-max_12-eps_0.01-reg_0.mp4" />
+</div>
+:::
 
-x = np.linspace(0, 4*np.pi, 500)
+:::{.text-center .mt-0}
+$\epsilon = 1e-2$, $\underline{\ell} = 2$, $\bar{\ell} = 12$
+:::
 
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=x, y=np.sin(x), name='sin(x)'))
-fig.add_trace(go.Scatter(x=x, y=np.cos(x), name='cos(x)'))
-fig.update_layout(width=1000, height=500)
-fig.show()
-```
+# Numerical Analysis and Modified Equations
+
+## Linear scalar transport equation
+
+In this work, we are concerned with the numerical solution of the Cauchy problem associated with the linear scalar conservation law
+
+$$
+\partial_t u(t, x)+V \partial_x u(t, x)=0, \quad(t, x) \in \mathbb{R}^{+} \times \mathbb{R}
+$$
+
+where $V$ is the transport velocity, taken $V>0$ without loss of generality.
+we consider 1 d problems. The extension to $2\mathrm{~d}$ / $3\mathrm{~d}$ problems is straightforward and usually done by tensorization [Bellotti2022] and yields analogous conclusions.
+
+The discrete volumes are
+$$
+C_{\ell, k}:=\left[2^{-\ell} k, 2^{-\ell}(k+1)\right], \quad k \in \{ 0,2^{\ell}-1 \},
+$$
+for any $\ell \in \{ \underline{\ell}, \bar{\ell} \}$. The measure of each cell at level $\ell$ is $\Delta x_{\ell}:=2^{-\ell}$ and we shall indicate $\Delta x:=\Delta x_{\bar{\ell}}$. The cell centers are $x_{\ell, k}:=$ $2^{-\ell}(k+1 / 2)$. Finally, we shall indicate $\Delta \ell:=\bar{\ell}-\ell$, hence $\Delta x_{\ell}=2^{\Delta \ell} \Delta x$.
+
+
+## Finite Volume scheme
+
+Finite Volume scheme at the finest level of resolution $\bar{\ell}$ for any cell of indices $\bar{k} \in \{ 0,2^{\bar{\ell}}-1 \}$. Explicit schemes read:
+
+$$
+\mathrm{v}_{\bar{\ell}, \bar{k}}^{n+1}=\mathrm{v}_{\bar{\ell}, \bar{k}}^n-\frac{\Delta t}{\Delta x}\left(\Phi\left(\mathrm{v}_{\bar{\ell}, \bar{k}+1 / 2}^n\right)-\Phi\left(\mathrm{v}_{\bar{\ell}, \bar{k}-1 / 2}^n\right)\right)
+$$
+
+where we utilize the same linear numerical flux for the left and the right flux (conservativity)
+$$
+\Phi\left(\mathbf{v}_{\bar{\ell}, \bar{k}-1 / 2}\right):=V \sum_{\alpha=\underline{\alpha}}^{\bar{\alpha}} \phi_\alpha \mathbf{v}_{\bar{\ell}, \bar{k}+\alpha}, \quad \Phi\left(\mathbf{v}_{\bar{\ell}, \bar{k}+1 / 2}\right):=V \sum_{\alpha=\underline{\alpha}}^{\bar{\alpha}} \phi_\alpha v_{\bar{\ell}, \bar{k}+1+\alpha}
+$$
+
+## Modified equations
+
+[Carpentier et al 97] or Cauchy-Kowalewski procedure [Harten et al 87]
+
+$$
+\partial_t u\left(t^n, x_{\bar{\ell}, \bar{k}}\right)+V \partial_x u\left(t^n, x_{\bar{\ell}, \bar{k}}\right)=\sum_{h=2}^{+\infty} \Delta x^{h-1} \sigma_h \partial_x^h u\left(t^n, x_{\bar{\ell}, \bar{k}}\right)
+$$
+
+::: {.incremental}
+- Upwind scheme
+$$
+\partial_t u+V \partial_x u=\frac{\Delta x V}{2}(1-\lambda V) \partial_{x x} u+O\left(\Delta x^2\right)
+$$
+- Lax-Wendroff scheme
+$$
+\partial_t u+V \partial_x u=-\frac{\Delta x^2 V}{6}\left(1-\lambda^2 V^2\right) \partial_x^3 u+O\left(\Delta x^3\right)
+$$
+- OSMP-3 scheme
+$$
+\partial_t u+V \partial_x u=\frac{\Delta x^3 V}{24}\left(-\lambda^3 V^2+2 \lambda^2 V^2+\lambda V-2\right) \partial_x^4 u+O\left(\Delta x^4\right)
+$$
+:::
+
+## How to include MRA I
+
+
+We introduce the reconstruction operator $\hat{s}$ instead of $s$ on the cells $\left(\bar{\ell}, 2^{\Delta \ell} k+\delta\right)$ for any $\delta \in \mathbb{Z}$ at the finest level
+
+- $\hat{s}=s$ : exact local flux reconstruction [Cohen et al. 2003].
+- $\hat{s}=0$ but $s>0$, direct evaluation or naive evaluation [Hovhannisyan et al 2010].
+
+
+:::: {.fragment}
+
+$$
+\mathbf{w}_{\bar{\ell}, \bar{k}}^{n+1}=\mathbf{w}_{\bar{\ell}, \bar{k}}^n-\frac{\Delta t}{\Delta x}\left(\Phi\left(\hat{\hat{\mathbf{w}}}_{\bar{\ell}, \bar{k}+1 / 2}^n\right)-\Phi\left(\hat{\hat{\mathbf{w}}}_{\bar{\ell}, \bar{k}-1 / 2}^n\right)\right)
+$$
+$$
+\Phi\left(\hat{\hat{\mathbf{w}}}_{\bar{\ell}, \bar{k}-1 / 2}\right):=V \sum_{\alpha=\underline{\alpha}}^{\bar{\alpha}} \phi_\alpha \hat{\hat{\mathbf{w}}}_{\bar{\ell}, \bar{k}+\alpha}
+$$
+
+::::
+
+## How to include MRA II
+
+Let now $(\ell, k) \in S\left(\tilde{\Lambda}^{n+1}\right)$, taking the projection yields the multiresolution scheme
+
+$$
+\mathbf{w}_{\ell, k}^{n+1}=\mathbf{w}_{\ell, k}^n-\frac{\Delta t}{\Delta x_{\ell}}\left(\Phi\left(\hat{\hat{\mathbf{w}}}_{\bar{\ell}, 2^{\Delta \ell}(k+1)+1 / 2}^n\right)-\Phi\left(\hat{\hat{\mathbf{w}}}_{\bar{\ell}, 2^{\Delta \ell} k-1 / 2}^n\right)\right)
+$$
+
+$$
+\Phi\left(\hat{\hat{\mathbf{w}}}_{\bar{\ell}, 2^{\Delta \ell} k-1 / 2}\right):=V \sum_{\alpha=\underline{\alpha}}^{\bar{\alpha}} \phi_\alpha \hat{\hat{\mathbf{w}}}_{\bar{\ell}, 2^{\Delta \ell} k+\alpha}
+$$
+
+:::{.my-4}
+Some information is loss because of the averaging procedure: two different schemes we can consider for the computation of the modified equations.
+:::
+
+:::{.callout-important icon=false title="Theorem"}
+The local truncation error of the reference Finite Volume scheme and the one of the adaptive Finite Volume scheme are the same up to order $2\hat{s}+1$ included.
+:::
+
+
+## Modified equations including MRA
+
+
+This result establishes at which order the modified equations of the reference scheme are perturbed by the introduction of the adaptive scheme. However, it does not characterize the terms in the modified equations above order $2\hat{s}+1$ in $\Delta x$ (symbolic computations).
+
+
+::: {.incremental}
+- Upwind scheme
+$$
+\begin{array}{lr}
+\partial_t u+V \partial_x u=\frac{\Delta x V}{2}\left(2^{\Delta \ell}-\lambda V\right) \partial_{x x} u+O\left(\Delta x^2\right), & \text { for } \hat{s}=0 \\
+\partial_t u+V \partial_x u=\frac{\Delta x V}{2}(1-\lambda V) \partial_{x x} u-\frac{\Delta x^2 V}{6}\left(1-\lambda^2 V^2\right) \partial_x^3 u+& \\
+\ \ \ \ \ \ \ \ \ \ \frac{\Delta x^3 V}{24}\left(-3 \Delta \ell 2^{2 \Delta \ell}+2^{2 \Delta \ell}-\lambda^3 V^3\right) \partial_x^4 u+O\left(\Delta x^4\right), & \text { for } \hat{s}=1
+\end{array}
+$$
+- Lax-Wendroff scheme
+$$
+\begin{array}{lr}
+\partial_t u+V \partial_x u=\frac{\Delta x \lambda V^2}{2}\left(2^{\Delta \ell}-1\right) \partial_{x x} u+O\left(\Delta x^2\right), &  \text { for } \hat{s}=0 \\
+\partial_t u+V \partial_x u=-\frac{\Delta x^2 V}{6}\left(1-\lambda^2 V^2\right) \partial_x^3 u+&\\
+\ \ \ \ \ \ \ \ \ \ \frac{\Delta x^3 \lambda V^2}{24}\left(-3 \Delta \ell 2^{2 \Delta \ell}+2^{2 \Delta \ell}-\lambda^2 V^2\right) \partial_x^4 u+O\left(\Delta x^4\right), & \text { for }  \hat{s}=1
+\end{array}
+$$
+
+:::
+
+## Theoretical results on the global error
+
+:::{.callout-important icon=false title="Theorem 2"}
+Assume that
+
+- The reference scheme satisfies the restricted stability condition $\|E\| \leq 1$
+- The Harten-like scheme satisfies the restricted stability condition $\left\|\bar{E}_{\Lambda}\right\| \leq 1$ for any $\Lambda$.
+
+Then, for smooth solution, in the limit $\Delta x \rightarrow 0$ (i.e. $\bar{\ell} \rightarrow+\infty$ ) and for $\Delta \underline{\ell}=\bar{\ell}-\underline{\ell}$ kept fixed, we have the error estimate
+
+$$
+\left\|\mathbf{v}_{\bar{\ell}}^n-\mathbf{w}_{\bar{\ell}}^n\right\| \leq C_{t r} t^n \Delta x^{2 \hat{s}+1}+C_{m r} \frac{t^n}{\lambda \Delta x} \epsilon
+$$
+
+where $C_{t r}=C_{t r}\left(\bar{\ell}-\underline{\ell},\left(\phi_\alpha\right)_\alpha, \lambda, \hat{s}, V\right)$ and $C_{m r}=C_{m r}\left(\bar{\ell}-\underline{\ell},\left(\phi_\alpha\right)_\alpha, \lambda, \hat{s}, s, V\right)$.
+$$
+\left\|\mathbf{u}_{\bar{\ell}}^n-\mathbf{w}_{\bar{\ell}}^n\right\| \leq C_{r e f} t^n \Delta x^\theta+C_{t r} t^n \Delta x^{2 \hat{s}+1}+C_{m r} \frac{t^n}{\lambda \Delta x} \epsilon
+$$
+:::
+
+:::{.notes}
+Let us start by discussing the assumption that we have placed in the statement of Theorem 2:
+- The restricted stability condition $\|E\| \leq 1$ could be replaced by a milder condition $\|E\| \leq 1+C \Delta t$ for some constant $C \geq 0$, see (69) in [7] and (A2) in [15]. This would not change the result. The technical assumption $\left\|\bar{E}_{\Lambda}\right\| \leq 1$ is harder to relax and also difficult to check in practice.
+- The fact of considering smooth solutions comes from the fact that we want to apply the analysis of the modified equations to obtain the convergence rates, in the spirit of the Lax theorem [1]. For the same reason, we take $\Delta x \rightarrow 0$ (or $\bar{\ell} \rightarrow+\infty$ ).
+- The distance between maximum and minimum level $\Delta \underline{\ell}=\bar{\ell}-\underline{\ell}$ has to be fixed, because otherwise the constant $C_{\text {tr }}$ potentially explodes and dominates $\Delta x^{2 \hat{s}+1}$ when $\Delta x \rightarrow 0$. This would prevent us from comparing orders. Moreover, this is also reasonable from the standpoint of actual computations, where we refine the mesh to achieve convergence (or nearly so) keeping the number of different available grid levels fixed. Still, we shall also perform numerical demonstration without fixing $\Delta \underline{\ell}=\bar{\ell}-\underline{\ell}$ to show that the modified equations that we have previously developed provide important information on the behavior of $\left\|\mathbf{v}_{\bar{\ell}}^n-\mathbf{w}_{\bar{\ell}}^n\right\|$.
+:::
+
+## Comments on theorem
+
+::: {.incremental}
+* The error estimate contains three contributions: the **discretization error** of the reference scheme, the **perturbation error** between the reference and the adaptive scheme, and the **thresholding error** coming from the multiresolution
+* The constant $C_{\mathrm{tr}}$ generally grows exponentially with $\bar{\ell}-\underline{\ell}$, sometimes also involving linear terms, i.e. $\hat{s}=1$. We have the following cases:
+    + $\theta<2 \hat{s}+1$. The error of the reference scheme dominates the perturbation introduced by the adaptive scheme $\left\|\mathbf{u}_{\bar{\ell}}^N-\mathbf{w}_{\bar{\ell}}^N\right\| \leq C_{\mathrm{ref}} T \Delta x^\theta+C_{\mathrm{mr}} \frac{T}{\lambda \Delta x} \epsilon$. A thresholding error of the same order as the reference error $\epsilon \sim \Delta x^{\theta+1}$.
+    + $\theta=2 \hat{s}+1$.  The error of the reference scheme and the perturbation order are comparable (**first example!**) We have $\left\|\mathbf{u}_{\bar{\ell}}^N-\mathbf{w}_{\bar{\ell}}^N\right\| \leq\left(C_{\mathrm{ref}}+C_{\mathrm{tr}}\right) T \Delta x^\theta+C_{\mathrm{mr}} \frac{T}{\lambda \Delta x} \epsilon$.
+    +  $\theta>2 \hat{s}+1$. The perturbation introduced by the adaptive scheme dominates the error of the reference scheme. Therefore, multiresolution introduces a large perturbation that yields a different convergence rate. We have $\left\|\mathbf{u}_{\bar{\ell}}^N-\mathbf{w}_{\bar{\ell}}^N\right\| \leq C_{\mathrm{tr}} T \Delta x^{2 \hat{s}+1}+C_{\mathrm{mr}} \frac{T}{\lambda \Delta x} \epsilon$, thus $\epsilon \sim \Delta x^{2 \hat{s}+2}$ (**AMR !**)
+:::
+
+
+
+:::{.notes}
+Assume that for the choice of $\bar{\ell}-\underline{\ell}$ at hand, we have $C_{\mathrm{tr}} \sim C_{\mathrm{ref}}$, then w
+:::
+
+
+## How to compute fluxes at the finest level
+
+:::{.text-center}
+<video data-autoplay src="videos/portions/portion_0000_autocreated.mp4" />
+:::
+
+:::{.notes}
+As we have seen, calculating the flux at the finest level is crucial to obtaining good error estimates. But how does this work in practice?
+
+Let's take a simple example.
+:::
+
+## How to compute fluxes at the finest level
+
+:::{.text-center}
+<video data-autoplay src="videos/portions/portion_0001_unnamed.mp4" />
+:::
+
+:::{.notes}
+Let's imagine that our finest level is 4 levels away from where we are.
+:::
+
+## How to compute fluxes at the finest level
+
+:::{.text-center}
+<video data-autoplay src="videos/portions/portion_0002_unnamed.mp4" />
+:::
+
+:::{.notes}
+Now let's imagine that we want to calculate the flow using this small cell on the left.
+We use an operator with s = 1, so we need 3 cells on the level below to calculate it. These 3 cells need 4 cells on the level below to be calculated. We can repeat the process indefinitely and we'll still need 4 cells on the bottom level.
+
+We can determine the coefficients of our linear application to go from our level to any cell on a higher level. There's no need for an intermediate level.
+:::
+
+## How to compute fluxes at the finest level
+
+:::{.text-center}
+<video data-autoplay src="videos/portions/portion_0003_unnamed.mp4" />
+:::
+
+:::{.notes}
+We can do the same for the right-hand cell.
+We can see that the cells used are not exactly the same.
+
+Now, if we wanted to reconstruct all the cells of the finest level, we'd only need these 5 cells, with different coefficients depending on the cell we're trying to reconstruct.
+:::
+
+# Burgers results
