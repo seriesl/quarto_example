@@ -1,0 +1,105 @@
+```{python}
+#|fig-align: center
+import numpy as np
+import plotly.graph_objects as go
+import plotly.io as pio
+pio.templates.default = "seaborn"
+
+# calcul du flux
+def f(x):
+    return (0.5*x*x)
+
+# résolution du problème de Riemann en x/t = 0 pour deux états Ug et Ud à gauche et à droite - version scalaire
+# Noté W_R(x/t=0,Ug,Ud) dans les notes écrites et les transparents de cours
+#
+def Riemann(Ug,Ud):
+    Riem = Ug
+    if (max(Ug,Ud)<=0) : Riem = Ud
+    else :
+        if Ug<=0 and Ud>=0 :
+            Riem=0
+        else :
+            if Ug+Ud<=0 : Riem = Ud
+    return Riem
+#
+# Il est possible de vectoriser de manière peu efficace
+# avec la fonction np.vectorize
+# 
+Riemann_vec = np.vectorize(Riemann)
+
+# Version vectorisée avec np.where plus performante
+# utilisée dans le schéma de Godunov ci-dessous permettant une 
+# résolution avec plusieurs milliers de cellules en quelques secondes
+#
+def Riemann2(Ug,Ud):
+    Riem = Ug
+    c = np.stack((Ug, Ud))
+    Riem = np.where(np.amax(c,axis=0)<=0, Ud, Riem)
+    Riem = np.where((Ug<=0) & (Ud>=0), 0, Riem)
+    Riem = np.where((Ug>=0) & (Ud<=0) & ((Ug+Ud)<0), Ud, Riem)
+    return Riem
+
+def godunov(dx, nx, x, tini, tend, cfl, uini):
+
+    u = np.zeros(nx+1)
+    u[1:] = uini(x)
+    u[0] = u[-1]
+
+    nt = int((tend-tini)/(cfl*dx)) + 1
+    dt = (tend-tini)/(nt-1)
+    #print(nt, dt)
+    dtoverdx = dt/dx
+
+    flux = np.zeros(nx)
+    etats = np.zeros(nx)
+
+    for it in range(nt-1):
+
+        etats[:-1] = Riemann2(u[1:-1],u[2:])
+        etats[-1] = Riemann(u[-1],u[0])
+        flux = f(etats)
+
+        u[2:] += -dtoverdx * (flux[1:] - flux[0:-1])
+        u[1] += -dtoverdx * (flux[0] - flux[-1])
+        u[0] = u[-1] #  conditions aux limites périodiques
+
+        t = (it+1)*dt
+
+    return u
+    
+def sin(x):
+    return 0.5*(1+np.sin(np.pi*(x-1)))
+
+
+tini = 0.
+t1 = 0.25
+t2 = 0.5
+t3 = 0.6
+t4 = 0.75
+
+xmin = -1
+xmax = 1
+nx = 2000
+
+cfl = 0.5
+
+uini = sin
+
+dx = (xmax-xmin) / nx
+x = np.linspace(xmin+dx/2, xmax-dx/2, nx)
+
+
+u1 = godunov(dx, nx, x, tini, t1, cfl, uini)
+u2 = godunov(dx, nx, x, tini, t2, cfl, uini)
+u3 = godunov(dx, nx, x, tini, t3, cfl, uini)
+u4 = godunov(dx, nx, x, tini, t4, cfl, uini)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x, y=sin(x), name='init. sol.'))
+fig.add_trace(go.Scatter(x=x, y=u1, name=f'sol. at t={t1}'))
+fig.add_trace(go.Scatter(x=x, y=u2, name=f'sol. at t={t2}'))
+#fig.add_trace(go.Scatter(x=x, y=u3, name=f'sol. at t={t3}'))
+fig.add_trace(go.Scatter(x=x, y=u4, name=f'sol. at t={t4}'))
+fig.update_layout(height=400, width=1000, legend=dict(x=0.8, y=0.95, bgcolor='rgba(0,0,0,0)', font=dict(size=16)))
+fig.show()
+```
