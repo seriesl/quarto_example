@@ -7,6 +7,8 @@ format:
     css: css/light.css
     logo: figures/logo_HPC@Maths.jpg
     # slide-number: true
+resources:
+  - videos/**
 highlight-style: github
 footer: Quarto presentation &nbsp;&nbsp; <img width="5%" src="figures/by-sa.png"/> &nbsp;&nbsp; 10 July 2025
 
