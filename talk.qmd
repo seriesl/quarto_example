@@ -527,6 +527,14 @@ We use a Godunov flux for the small hat problem
 $\epsilon = 1e-2$, $\underline{\ell} = 2$, $\bar{\ell} = 12$
 :::
 
+---
+
+{{< include python_sections/anim_hat.qmd >}}
+
+---
+
+{{< include python_sections/anim_sin.qmd >}}
+
 # Numerical Analysis and Modified Equations
 
 ## Linear scalar transport equation
