@@ -1,0 +1,72 @@
+```{python}
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.io as pio
+pio.templates.default = "seaborn"
+import h5py
+
+def read_frame(filename, var):
+    mesh = h5py.File(filename, 'r')['mesh']
+    points = mesh['points']
+    connectivity = mesh['connectivity']
+
+    segments = np.zeros((connectivity.shape[0], 2, 2))
+    segments[:, :, 0] = points[:][connectivity[:]][:, :, 0]
+
+    centers = .5*(segments[:, 0, 0] + segments[:, 1, 0])
+
+    u = mesh['fields'][var][:]
+    level = mesh['fields']['level'][:]
+
+    index = np.argsort(centers)
+
+    x = centers[index]
+    u = u[index]
+    level = level[index]
+
+    return x, u, level
+
+def show_sol(level_min, level_max, eps, mlf=False):
+
+    if mlf:
+        filename = './data/order01/burgers_mlf_eps_'+eps+'/burgers_level_'+str(level_min)+'_'+str(level_max)+'.h5'
+    else:
+        filename = './data/order01/burgers_eps_'+eps+'/burgers_level_'+str(level_min)+'_'+str(level_max)+'.h5'
+        
+    x, u, level = read_frame(filename, 'u')
+
+    filename = './data/order01/burgers_uniform/burgers_level_'+str(level_max)+'_'+str(level_max)+'.h5'
+    xref, uref, _ = read_frame(filename, 'u')
+
+    dx = 2/(2**level_max)
+
+    xx = np.zeros(3*x.size)
+    uu = np.zeros(3*x.size) 
+    ll = np.zeros(3*x.size) 
+    for i in range(x.size):
+        dx = 2/(2**level[i])
+        xx[3*i]   = x[i]-dx/2
+        xx[3*i+1] = x[i]+dx/2
+        xx[3*i+2] = None
+        uu[3*i]   = u[i]
+        uu[3*i+1] = u[i]
+        uu[3*i+2] = None
+        ll[3*i]   = level[i]
+        ll[3*i+1] = level[i]
+        ll[3*i+2] = None
+
+    rate = 1 - u.size/(2**level_max)
+
+    fig = make_subplots(rows=2, cols=1, vertical_spacing=0.1)
+    fig.add_trace(go.Scatter(x=xref, y=uref, mode='lines', name="ref. sol."), row=1, col=1)
+    marker_sol = dict(symbol='x-thin', line_color='rgb(221,132,82)', line_width=1, size=5) 
+    fig.add_trace(go.Scatter(x=x, y=u, mode='markers', marker=marker_sol, name="sol"), row=1, col=1)
+    marker_level = dict(symbol='line-ns', line_color='rgb(85,168,104)', line_width=1, size=5) 
+    fig.add_trace(go.Scatter(x=xx, y=ll, mode='lines+markers', name="levell", marker=marker_level), row=2, col=1)
+    legend = dict(x=0.05, y=0.95, bgcolor='rgba(0,0,0,0)', font=dict(size=14))
+    fig.update_layout(legend=legend, height=600, width=1000, title=f"Compression rate = {rate}, eps = {eps}, Tf=0.6, min level={level_min}, max level={level_max}")
+    fig.show()
+
+show_sol(3, 10, '1e-4', mlf=False)
+```
