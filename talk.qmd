@@ -10,7 +10,7 @@ format:
 resources:
   - videos/**
 highlight-style: github
-footer: Quarto presentation &nbsp;&nbsp; <img width="5%" src="figures/by-sa.png"/> &nbsp;&nbsp; 10 July 2025
+footer: Journée EDP et Analyse Numérique &nbsp;&nbsp; <img width="5%" src="figures/by-sa.png"/> &nbsp;&nbsp; 10 July 2025
 
 
 ---
