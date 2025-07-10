@@ -896,9 +896,8 @@ Now, if we wanted to reconstruct all the cells of the finest level, we'd only ne
 
 
 :::{.text-center}
-![](figures/Bsvortex_osmp3_InitialState_MRAMLF_eps1e-03.png){width=45%}
-
-![](figures/Bsvortex_osmp3_Tf10_MRAMLF_eps1e-03.png){width=45%}
+![](figures/Bsvortex_osmp3_InitialState_MRAMLF_eps1e-03.png){width=47%}
+![](figures/Bsvortex_osmp3_Tf10_MRAMLF_eps1e-03.png){width=47%}
 :::
 
 
