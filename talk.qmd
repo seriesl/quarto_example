@@ -859,6 +859,12 @@ Now, if we wanted to reconstruct all the cells of the finest level, we'd only ne
 {{< include python_sections/sol_MR_MLF_order03_eps1e-5.qmd >}}
 
 
+## Burgers results (MR+MLF solution order 1) small hat {.fs-6}
+
+:::{.text-center}
+<video data-autoplay width="80%" src="videos/burgers/MRA_upwind_with_portion-min_1-max_12-eps_0.01-reg_0.mp4" />
+:::
+
 # Adaptive mesh refinement software
 
 ## Mesh adaptation
