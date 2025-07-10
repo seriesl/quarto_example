@@ -527,9 +527,14 @@ We use a Godunov flux for the small hat problem
 $\epsilon = 1e-2$, $\underline{\ell} = 2$, $\bar{\ell} = 12$
 :::
 
+<!-- ---
+
+{{< include python_sections/anim_hat.qmd >}} -->
+
+
 ---
 
-{{< include python_sections/anim_hat.qmd >}}
+{{< include python_sections/anim_hat2.qmd >}}
 
 ---
 
@@ -858,12 +863,46 @@ Now, if we wanted to reconstruct all the cells of the finest level, we'd only ne
 
 {{< include python_sections/sol_MR_MLF_order03_eps1e-5.qmd >}}
 
+---
 
 ## Burgers results (MR+MLF solution order 1) small hat {.fs-6}
 
-:::{.text-center}
+<!-- :::{.text-center}
 <video data-autoplay width="80%" src="videos/burgers/MRA_upwind_with_portion-min_1-max_12-eps_0.01-reg_0.mp4" />
+::: -->
+{{< include python_sections/anim_hat_bis.qmd >}}
+
+---
+
+## Burgers results (MR+MLF solution order 1) sinus {.fs-6}
+
+{{< include python_sections/anim_sin_bis.qmd >}}
+
+---
+
+## Burgers 2D results (MR+MLF solution order 1) 
+
+
+::::{.center-page-vertically}
+:::{.text-center}
+<video data-autoplay width="99%" src="videos/burgers2d.mp4" />
 :::
+::::
+
+
+---
+
+## Euler 2D results (MR+MLF solution order 3 (OSMP scheme)) 
+
+
+:::{.text-center}
+![](figures/Bsvortex_osmp3_InitialState_MRAMLF_eps1e-03.png){width=45%}
+
+![](figures/Bsvortex_osmp3_Tf10_MRAMLF_eps1e-03.png){width=45%}
+:::
+
+
+
 
 # Adaptive mesh refinement software
 

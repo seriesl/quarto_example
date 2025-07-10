@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<Xdmf>
+	<Domain>
+		<Grid Name="mesh">
+			<Topology TopologyType="Polyline" NumberOfElements="90">
+				<DataItem Dimensions="180" Format="HDF">burgers_level_3_10_ite_35.h5:/mesh/connectivity</DataItem>
+			</Topology>
+			<Geometry GeometryType="XYZ">
+				<DataItem Dimensions="273" Format="HDF">burgers_level_3_10_ite_35.h5:/mesh/points</DataItem>
+			</Geometry>
+			<Attribute Name="u" Center="Cell">
+				<DataItem Dimensions="90" Format="HDF" Precision="8">burgers_level_3_10_ite_35.h5:/mesh/fields/u</DataItem>
+			</Attribute>
+			<Attribute Name="level" Center="Cell">
+				<DataItem Dimensions="90" Format="HDF" Precision="8">burgers_level_3_10_ite_35.h5:/mesh/fields/level</DataItem>
+			</Attribute>
+		</Grid>
+	</Domain>
+</Xdmf>

@@ -1,0 +1,83 @@
+```{python}
+import h5py
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.io as pio
+pio.templates.default = "seaborn"
+
+
+
+
+
+def read_frame(filename, var):
+    mesh = h5py.File(filename, 'r')['mesh']
+    points = mesh['points']
+    connectivity = mesh['connectivity']
+
+    segments = np.zeros((connectivity.shape[0], 2, 2))
+    segments[:, :, 0] = points[:][connectivity[:]][:, :, 0]
+
+    centers = .5*(segments[:, 0, 0] + segments[:, 1, 0])
+    
+    u = mesh['fields'][var][:]
+    level = mesh['fields']['level'][:]
+    
+    index = np.argsort(centers)
+
+    x = centers[index]    
+    u = u[index]
+    level = level[index]
+    
+    return x, u, level
+
+
+
+
+def show_animation(nb_frames):
+
+    min_level = 3
+    max_level = 10
+    
+    dx = 5/(2**max_level)
+    dt = 0.5*dx
+
+    dt_save = 1/50.
+
+    t = np.loadtxt('./data/sin_mr/time.txt')
+
+    frames = []
+    for i in range(0, nb_frames):
+        filename = './data/sin_exa/burgers_level_10_10_ite_'+str(i)+'.h5'
+        x, u, level = read_frame(filename, 'u')
+
+
+        filename = './data/sin_mr/burgers_level_3_10_ite_'+str(i)+'.h5'
+        xmr, umr, levelmr = read_frame(filename, 'u')
+        
+        filename = './data/sin_mr_mlf/burgers_level_3_10_ite_'+str(i)+'.h5'
+        xmrmlf, umrmlf, levelmrmlf = read_frame(filename, 'u')
+        
+        frames.append(go.Frame(data=[go.Scatter(x=x, y=u, name=f"exa. sol. (t = {t[i]:.4f})"), 
+                                     go.Scatter(x=xmr, y=umr, name="MR sol."),
+                                     go.Scatter(x=xmrmlf, y=umrmlf, name="MR+MLF sol."),
+                                     ]))
+                      
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=frames[0].data[0].x, y=frames[0].data[0].y, name=f"exa. sol. (t = {t[0]:.5f})"))
+    fig.add_trace(go.Scatter(x=frames[0].data[1].x, y=frames[0].data[1].y, mode='markers', name="MR sol. "))
+    fig.add_trace(go.Scatter(x=frames[0].data[2].x, y=frames[0].data[2].y, mode='markers', name="MR+MLF sol. "))
+
+    
+    animate_opts = dict(fromcurrent=True, frame={"duration": 100}, transition={"duration": 0})
+    buttons=[dict(label="&#9654;", method="animate", args=[None, animate_opts]),
+             dict(label="&#9724;", method="animate", args=[[None], dict(mode="immediate")])]
+    fig.update_layout(updatemenus=[dict(type="buttons", buttons=buttons, direction="left", x=0.5, y=-0.1)], 
+                      title=f'Burgers, eps = {1e-3},  min level = {min_level}, max level = {max_level}', height=550, legend=dict( font=dict(size=16), x=0.01, y=0.97, bgcolor='rgba(0,0,0,0)', tracegroupgap=250, groupclick="toggleitem"), width=1000)
+    fig.update(frames=frames)
+    fig.show()
+
+show_animation(50)    
+```
